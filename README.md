@@ -81,20 +81,20 @@ Answer `y` if asked to add the marketplace and pick the **user** scope. A `⇅ s
 ## 4. First `/sync`, step by step
 
 1. Click the `⇅ sync` chip (fullscreen terminal) or type `/sync`. The Claude Sync panel opens; it is driven with the keyboard: **Tab** / arrows move, **Enter** presses, **Esc** closes.
-   ![Screenshot pending: the chip in the footer](docs/images/screenshot-footer-chip.png)
+   ![Chip in the footer](docs/images/screenshot-footer-chip.png)
 2. The panel checks `git` and `gh`. Press **Sign in to GitHub**: a one-time code and a link appear; open the link, paste the code and accept. If it does not finish, type `! gh auth login` at the prompt and press **Check again**.
-   ![Screenshot pending: setup screen](docs/images/screenshot-setup.png)
+   ![Setup screen](docs/images/screenshot-setup.png)
 3. Press **Use the repository `<you>/claude-sync-config`**. It is created private if it does not exist.
 4. Type a name for your first profile (for example `home`) and press Enter.
 5. You get the tree of everything on this machine, by category. **Enter** on a category opens it; **Enter** on an item ticks it; `all` / `none` tick a whole category. Hooks bring the scripts they run with them.
-   ![Screenshot pending: the selection tree](docs/images/screenshot-tree.png)
+   ![Selection tree](docs/images/screenshot-tree.png)
 6. Items marked `⚠ secret` cannot be ticked. Open one to see the file and line; remove the token from the file, or press **Not a secret** if it is a false alarm.
-   ![Screenshot pending: a blocked secret](docs/images/screenshot-secret.png)
+   ![Blocked secret](docs/images/screenshot-secret.png)
 7. Press **Continue**. The items are uploaded as one commit: that is your first version.
 
 From then on the chip reads `⇅ home`, with `●` when you have changes not uploaded and `↓` when the repo has something new. The panel's menu:
 
-![Screenshot pending: the menu](docs/images/screenshot-menu.png)
+![Menu](docs/images/screenshot-menu.png)
 
 | Entry | What it does |
 |---|---|
@@ -111,9 +111,9 @@ From then on the chip reads `⇅ home`, with `●` when you have changes not upl
 2. Type `/sync`, sign in and press **Use the repository**.
 3. Pick your profile. Review the tree: new items are ticked; `⚠ other system` items (for example a PowerShell hook on a Mac) are left out; conflicts ask you to choose.
 4. Check the differences and press **Apply**. Settings are merged into `settings.json` and `~/.claude.json`, never rewritten whole; missing marketplaces and plugins are installed; you are asked for any secret this machine lacks.
-   ![Screenshot pending: the review with differences](docs/images/screenshot-diff.png)
+   ![Review with differences](docs/images/screenshot-diff.png)
 5. The summary says what was applied, what was skipped and why. Restart Claude Code (or run `/reload-plugins`) when it asks.
-   ![Screenshot pending: the summary](docs/images/screenshot-summary.png)
+   ![Summary](docs/images/screenshot-summary.png)
 
 Project items (`.claude/` of a repo, `CLAUDE.md`, `.mcp.json`, project memory) apply to the repo Claude is open in, or to the folder you type. Files already tracked by that project's own git are marked `in the project's git`; applying them shows up there as a normal edit, and claude-sync never commits in your repos.
 

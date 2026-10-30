@@ -81,20 +81,20 @@ Responde `y` si te pregunta si añadir el marketplace y elige el ámbito **user*
 ## 4. Primer `/sync`, paso a paso
 
 1. Pulsa el botón `⇅ sync` (terminal a pantalla completa) o escribe `/sync`. Se abre el panel de Claude Sync; se maneja con el teclado: **Tab** / flechas para moverse, **Enter** para pulsar, **Esc** para cerrar.
-   ![Captura pendiente: el botón en la barra inferior](docs/images/screenshot-footer-chip.png)
+   ![El botón en la barra inferior](docs/images/screenshot-footer-chip.png)
 2. El panel comprueba `git` y `gh`. Pulsa **Iniciar sesión en GitHub**: aparecen un código de un solo uso y un enlace; abre el enlace, pega el código y acepta. Si no termina, escribe `! gh auth login` en el prompt y pulsa **Comprobar otra vez**.
-   ![Captura pendiente: pantalla de configuración](docs/images/screenshot-setup.png)
+   ![Pantalla de configuración](docs/images/screenshot-setup.png)
 3. Pulsa **Usar el repositorio `<tú>/claude-sync-config`**. Si no existe, se crea privado.
 4. Escribe el nombre de tu primer perfil (por ejemplo `casa`) y pulsa Enter.
 5. Aparece el árbol con todo lo que hay en este equipo, por categorías. **Enter** sobre una categoría la abre; **Enter** sobre un elemento lo marca; `todo` / `nada` marcan una categoría entera. Los hooks se llevan consigo los scripts que ejecutan.
-   ![Captura pendiente: el árbol de selección](docs/images/screenshot-tree.png)
+   ![El árbol de selección](docs/images/screenshot-tree.png)
 6. Los elementos `⚠ secreto` no se pueden marcar. Ábrelos para ver el archivo y la línea; quita el token del archivo, o pulsa **No es un secreto** si es una falsa alarma.
-   ![Captura pendiente: un secreto bloqueado](docs/images/screenshot-secret.png)
+   ![Un secreto bloqueado](docs/images/screenshot-secret.png)
 7. Pulsa **Continuar**. Los elementos se suben en un commit: esa es tu primera versión.
 
 Desde entonces el botón muestra `⇅ casa`, con `●` cuando tienes cambios sin subir y `↓` cuando el repo tiene algo nuevo. El menú del panel:
 
-![Captura pendiente: el menú](docs/images/screenshot-menu.png)
+![El menú](docs/images/screenshot-menu.png)
 
 | Opción | Qué hace |
 |---|---|
@@ -111,9 +111,9 @@ Desde entonces el botón muestra `⇅ casa`, con `●` cuando tienes cambios sin
 2. Escribe `/sync`, inicia sesión y pulsa **Usar el repositorio**.
 3. Elige tu perfil. Revisa el árbol: lo nuevo viene marcado; lo `⚠ otro sistema` (por ejemplo un hook de PowerShell en un Mac) se queda fuera; los conflictos te piden elegir.
 4. Revisa las diferencias y pulsa **Aplicar**. Los ajustes se fusionan en `settings.json` y `~/.claude.json`, nunca se reescriben enteros; se instalan los marketplaces y plugins que falten; se te piden los secretos que este equipo no tenga.
-   ![Captura pendiente: la revisión con diferencias](docs/images/screenshot-diff.png)
+   ![La revisión con diferencias](docs/images/screenshot-diff.png)
 5. El resumen dice qué se ha aplicado, qué se ha saltado y por qué. Reinicia Claude Code (o ejecuta `/reload-plugins`) cuando lo pida.
-   ![Captura pendiente: el resumen](docs/images/screenshot-summary.png)
+   ![El resumen](docs/images/screenshot-summary.png)
 
 Los elementos de proyecto (`.claude/` de un repo, `CLAUDE.md`, `.mcp.json`, memoria del proyecto) se aplican al repo en el que está abierto Claude, o a la carpeta que escribas. Los archivos que ya están en el git de ese proyecto salen marcados `en el git del proyecto`; al aplicarlos aparecen allí como una edición normal, y claude-sync nunca hace commits en tus repos.
 
