@@ -61,7 +61,7 @@ test('project items: identity by remote, config keys only, memory, tracked files
   const { items, project } = await collectProject(host, env, `${H}/work/app`)
   expect(project?.id).toBe('github.com/U/app')
   expect(items.map(i => i.id).sort()).toEqual([
-    'p:github.com/U/app:agent:tester.md', 'p:github.com/U/app:config:allowedTools', 'p:github.com/U/app:config:mcpServers',
+    'p:github.com/U/app:agent:tester.md', 'p:github.com/U/app:config:allowedTools',
     'p:github.com/U/app:file:.claude/settings.json', 'p:github.com/U/app:file:.mcp.json', 'p:github.com/U/app:file:CLAUDE.md',
     'p:github.com/U/app:memory:MEMORY.md', 'p:github.com/U/app:memory:a.md'
   ])
@@ -69,6 +69,40 @@ test('project items: identity by remote, config keys only, memory, tracked files
   expect(items.find(i => i.id.endsWith('file:CLAUDE.md'))?.inProjectGit).toBe(true)
   expect(items.find(i => i.id.endsWith('agent:tester.md'))?.inProjectGit).toBe(undefined)
   expect(items.find(i => i.id.endsWith('file:CLAUDE.md'))?.content.files?.['CLAUDE.md']).toBe('# App\nRun ./run.sh\n')
+})
+
+test('skills Claude syncs from the account and dotfiles are never items', async () => {
+  const files = machineA()
+  files[`${C}/skills/synced/0f6e/built-in-browser/SKILL.md`] = 'browser\n'
+  files[`${C}/skills/synced/.bucket-a1`] = 'x'
+  files[`${C}/skills/synced/.last-complete-round`] = '3'
+  files[`${C}/skills/.bucket-b2/SKILL.md`] = 'x'
+  files[`${C}/agents/.bucket-c3.md`] = 'x'
+  files[`${C}/commands/.cache/run.md`] = 'x'
+  files[`${C}/projects/-home-u-work-app/memory/.bucket-d4`] = 'x'
+  files[`${H}/work/app/.claude/skills/.bucket-e5/SKILL.md`] = 'x'
+  const { host, env } = await setup(files)
+  const global = (await collectGlobal(host, env)).items.map(i => i.id)
+  expect(global.filter(id => id.startsWith('skill:')).sort()).toEqual(['skill:keys', 'skill:writer'])
+  expect(global.filter(id => id.startsWith('agent:') || id.startsWith('command:')).sort()).toEqual(['agent:reviewer.md', 'command:git/ship.md'])
+  const project = (await collectProject(host, env, `${H}/work/app`)).items.map(i => i.id)
+  expect(project.some(id => id.includes('bucket'))).toBe(false)
+  expect(canonical([global, project]).includes('synced')).toBe(false)
+})
+
+test('project config keys with an empty value are not items', async () => {
+  const files = machineA()
+  files[`${H}/.claude.json`] = JSON.stringify({
+    projects: { '/home/u/work/app': { allowedTools: [], mcpServers: {}, enabledMcpjsonServers: [], disabledMcpjsonServers: ['x'], mcpContextUris: [], hasTrustDialogAccepted: true } }
+  })
+  const { host, env } = await setup(files)
+  const config = (await collectProject(host, env, `${H}/work/app`)).items.filter(i => i.kind === 'project-config')
+  expect(config.map(i => i.key)).toEqual(['disabledMcpjsonServers'])
+  for (const value of [null, '', [], {}]) {
+    files[`${H}/.claude.json`] = JSON.stringify({ projects: { '/home/u/work/app': { allowedTools: value } } })
+    const again = await setup(files)
+    expect((await collectProject(again.host, again.env, `${H}/work/app`)).items.some(i => i.kind === 'project-config')).toBe(false)
+  }
 })
 
 test('writing every item into an empty machine gives back the same items', async () => {

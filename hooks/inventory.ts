@@ -38,6 +38,10 @@ export const isFileKind = (kind: Kind) => !['hook', 'permission', 'setting', 'ma
 
 export const hashContent = (content: Content) => sha256(canonical(content))
 
+const isHidden = (rel: string) => rel.split('/').some(part => part.startsWith('.'))
+const isEmpty = (value: Json | undefined) =>
+  value === undefined || value === null || value === '' || (typeof value === 'object' && Object.keys(value).length === 0)
+
 async function readJson (host: Host, path: string, warnings: string[]): Promise<Record<string, Json>> {
   try {
     return parseJson(await host.read(path), path)
@@ -151,14 +155,14 @@ export async function collectGlobal (host: Host, env: Env): Promise<Collected> {
   }
 
   for (const entry of await host.list(join(env, c, 'skills'))) {
-    if (entry.kind !== 'dir') continue
+    if (entry.kind !== 'dir' || entry.name === 'synced' || isHidden(entry.name)) continue
     const dir = join(env, c, 'skills', entry.name)
     items.push({ id: `skill:${entry.name}`, kind: 'skill', key: entry.name, label: entry.name, content: { files: await readFiles(host, env, dir, await listFiles(host, env, dir), home) } })
   }
-  for (const name of (await listFiles(host, env, join(env, c, 'agents'))).filter(f => f.endsWith('.md'))) {
+  for (const name of (await listFiles(host, env, join(env, c, 'agents'))).filter(f => f.endsWith('.md') && !isHidden(f))) {
     items.push({ id: `agent:${name}`, kind: 'agent', key: name, label: name.replace(/\.md$/, ''), content: { files: await readFiles(host, env, join(env, c, 'agents'), [name], home) } })
   }
-  for (const name of (await listFiles(host, env, join(env, c, 'commands'))).filter(f => f.endsWith('.md'))) {
+  for (const name of (await listFiles(host, env, join(env, c, 'commands'))).filter(f => f.endsWith('.md') && !isHidden(f))) {
     items.push({ id: `command:${name}`, kind: 'command', key: name, label: `/${name.replace(/\.md$/, '').replace(/\//g, ':')}`, content: { files: await readFiles(host, env, join(env, c, 'commands'), [name], home) } })
   }
   const keys = await host.read(join(env, c, 'keybindings.json'))
@@ -227,14 +231,14 @@ export async function collectProject (host: Host, env: Env, root: string, id?: s
   }
   const dot = join(env, root, '.claude')
   for (const entry of await host.list(join(env, dot, 'skills'))) {
-    if (entry.kind !== 'dir') continue
+    if (entry.kind !== 'dir' || isHidden(entry.name)) continue
     const dir = join(env, dot, 'skills', entry.name)
     items.push(p('project-skill', entry.name, entry.name, { files: await readFiles(host, env, dir, await listFiles(host, env, dir), text) }))
   }
-  for (const name of (await listFiles(host, env, join(env, dot, 'agents'))).filter(f => f.endsWith('.md'))) {
+  for (const name of (await listFiles(host, env, join(env, dot, 'agents'))).filter(f => f.endsWith('.md') && !isHidden(f))) {
     items.push(p('project-agent', name, name.replace(/\.md$/, ''), { files: await readFiles(host, env, join(env, dot, 'agents'), [name], text) }))
   }
-  for (const name of (await listFiles(host, env, join(env, dot, 'commands'))).filter(f => f.endsWith('.md'))) {
+  for (const name of (await listFiles(host, env, join(env, dot, 'commands'))).filter(f => f.endsWith('.md') && !isHidden(f))) {
     items.push(p('project-command', name, `/${name.replace(/\.md$/, '')}`, { files: await readFiles(host, env, join(env, dot, 'commands'), [name], text) }))
   }
 
@@ -242,11 +246,11 @@ export async function collectProject (host: Host, env: Env, root: string, id?: s
   const projects = (claudeJson.projects ?? {}) as Record<string, Json>
   const entry = projects[projectEntryKey(projects, root)] as Record<string, Json> | undefined
   for (const key of PROJECT_CONFIG) {
-    if (entry?.[key] !== undefined) items.push(p('project-config', key, key, { value: mapStrings(entry[key] as Json, text) }))
+    if (entry && !isEmpty(entry[key])) items.push(p('project-config', key, key, { value: mapStrings(entry[key] as Json, text) }))
   }
 
   const memory = join(env, env.claudeDir, 'projects', encodeProjectPath(root), 'memory')
-  for (const name of await listFiles(host, env, memory)) {
+  for (const name of (await listFiles(host, env, memory)).filter(f => !isHidden(f))) {
     items.push(p('memory', name, name, { files: await readFiles(host, env, memory, [name], text) }))
   }
 
