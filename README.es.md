@@ -84,7 +84,7 @@ Responde `y` si te pregunta si añadir el marketplace y elige el ámbito **user*
    ![El botón en la barra inferior](docs/images/screenshot-footer-chip.png)
 2. El panel comprueba `git` y `gh`. Pulsa **Iniciar sesión en GitHub**: aparecen un código de un solo uso y un enlace; abre el enlace, pega el código y acepta. Si no termina, escribe `! gh auth login` en el prompt y pulsa **Comprobar otra vez**.
    ![Pantalla de configuración](docs/images/screenshot-setup.png)
-3. Pulsa **Usar el repositorio `<tú>/claude-sync-config`**. Si no existe, se crea privado.
+3. Pulsa **Usar `<tú>/claude-sync-config`**. Si no existe, se crea privado.
 4. Escribe el nombre de tu primer perfil (por ejemplo `casa`) y pulsa Enter.
 5. Aparece el árbol con todo lo que hay en este equipo, por categorías. **Enter** sobre una categoría la abre; **Enter** sobre un elemento lo marca; `todo` / `nada` marcan una categoría entera. Los hooks se llevan consigo los scripts que ejecutan.
    ![El árbol de selección](docs/images/screenshot-tree.png)
@@ -108,7 +108,7 @@ Desde entonces el botón muestra `⇅ casa`, con `●` cuando tienes cambios sin
 ## 5. En tu segundo equipo
 
 1. Instala `git` y `gh` (sección 2) y el plugin (sección 3).
-2. Escribe `/sync`, inicia sesión y pulsa **Usar el repositorio**.
+2. Escribe `/sync`, inicia sesión y pulsa **Usar `<tú>/claude-sync-config`**.
 3. Elige tu perfil. Revisa el árbol: lo nuevo viene marcado; lo `⚠ otro sistema` (por ejemplo un hook de PowerShell en un Mac) se queda fuera; los conflictos te piden elegir.
 4. Revisa las diferencias y pulsa **Aplicar**. Los ajustes se fusionan en `settings.json` y `~/.claude.json`, nunca se reescriben enteros; se instalan los marketplaces y plugins que falten; se te piden los secretos que este equipo no tenga.
    ![La revisión con diferencias](docs/images/screenshot-diff.png)

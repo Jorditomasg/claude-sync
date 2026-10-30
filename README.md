@@ -84,7 +84,7 @@ Answer `y` if asked to add the marketplace and pick the **user** scope. A `⇅ s
    ![Chip in the footer](docs/images/screenshot-footer-chip.png)
 2. The panel checks `git` and `gh`. Press **Sign in to GitHub**: a one-time code and a link appear; open the link, paste the code and accept. If it does not finish, type `! gh auth login` at the prompt and press **Check again**.
    ![Setup screen](docs/images/screenshot-setup.png)
-3. Press **Use the repository `<you>/claude-sync-config`**. It is created private if it does not exist.
+3. Press **Use `<you>/claude-sync-config`**. It is created private if it does not exist.
 4. Type a name for your first profile (for example `home`) and press Enter.
 5. You get the tree of everything on this machine, by category. **Enter** on a category opens it; **Enter** on an item ticks it; `all` / `none` tick a whole category. Hooks bring the scripts they run with them.
    ![Selection tree](docs/images/screenshot-tree.png)
@@ -108,7 +108,7 @@ From then on the chip reads `⇅ home`, with `●` when you have changes not upl
 ## 5. On your second machine
 
 1. Install `git` and `gh` (section 2) and the plugin (section 3).
-2. Type `/sync`, sign in and press **Use the repository**.
+2. Type `/sync`, sign in and press **Use `<you>/claude-sync-config`**.
 3. Pick your profile. Review the tree: new items are ticked; `⚠ other system` items (for example a PowerShell hook on a Mac) are left out; conflicts ask you to choose.
 4. Check the differences and press **Apply**. Settings are merged into `settings.json` and `~/.claude.json`, never rewritten whole; missing marketplaces and plugins are installed; you are asked for any secret this machine lacks.
    ![Review with differences](docs/images/screenshot-diff.png)
