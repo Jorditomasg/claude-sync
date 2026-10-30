@@ -4,7 +4,7 @@ export type Entry = { name: string; kind: 'file' | 'dir' | 'other' }
 export type RunOptions = { cwd?: string; stdin?: string; timeoutMs?: number }
 export type RunResult = { code: number; stdout: string; stderr: string }
 
-export type EnvName = 'HOME' | 'USERPROFILE' | 'OS' | 'WSL_DISTRO_NAME' | 'CLAUDE_CONFIG_DIR' | 'LANG' | 'LC_ALL' | 'LC_MESSAGES'
+export type EnvName = 'HOME' | 'USERPROFILE' | 'OS' | 'WSL_DISTRO_NAME' | 'CLAUDE_CONFIG_DIR' | 'LANG' | 'LC_ALL' | 'LC_MESSAGES' | 'GH_TOKEN' | 'GITHUB_TOKEN'
 
 export interface Host {
   read (path: string): Promise<string | undefined>
@@ -36,6 +36,8 @@ export function engineHost ($: EngineInterface): Host {
       case 'LANG': return $.env.get('LANG')
       case 'LC_ALL': return $.env.get('LC_ALL')
       case 'LC_MESSAGES': return $.env.get('LC_MESSAGES')
+      case 'GH_TOKEN': return $.env.get('GH_TOKEN')
+      case 'GITHUB_TOKEN': return $.env.get('GITHUB_TOKEN')
     }
   }
   return {

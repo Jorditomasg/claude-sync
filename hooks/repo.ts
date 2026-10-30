@@ -6,7 +6,8 @@ import { emptyManifest, type Manifest, type ManifestItem } from './profile'
 export const REPO_NAME = 'claude-sync-config'
 export const repoDir = (env: Env) => join(env, env.dataDir, 'repo')
 
-export type Tools = { git: boolean; gh: boolean; ghAuthed: boolean; login?: string }
+export type TokenVar = 'GH_TOKEN' | 'GITHUB_TOKEN'
+export type Tools = { git: boolean; gh: boolean; ghAuthed: boolean; login?: string; tokenVar?: TokenVar }
 export type Version = { commit: string; date: string; message: string }
 
 export class GitError extends Error {}
@@ -24,8 +25,12 @@ export async function checkTools (host: Host): Promise<Tools> {
   const gitOk = (await host.run(['git', '--version'])).code === 0
   const ghOk = (await host.run(['gh', '--version'])).code === 0
   if (!ghOk) return { git: gitOk, gh: false, ghAuthed: false }
-  const authed = (await host.run(['gh', 'auth', 'status', '--hostname', 'github.com'])).code === 0
-  if (!authed) return { git: gitOk, gh: true, ghAuthed: false }
+  const status = await host.run(['gh', 'auth', 'status', '--hostname', 'github.com'])
+  if (status.code !== 0) {
+    const named = /\b(GH_TOKEN|GITHUB_TOKEN)\b/.exec(`${status.stdout}\n${status.stderr}`)?.[1] as TokenVar | undefined
+    const tokenVar = named ?? (await host.env('GH_TOKEN') ? 'GH_TOKEN' : await host.env('GITHUB_TOKEN') ? 'GITHUB_TOKEN' : undefined)
+    return { git: gitOk, gh: true, ghAuthed: false, ...(tokenVar ? { tokenVar } : {}) }
+  }
   const user = await host.run(['gh', 'api', 'user', '--jq', '.login'])
   return { git: gitOk, gh: true, ghAuthed: true, login: user.code === 0 ? user.stdout.trim() : undefined }
 }

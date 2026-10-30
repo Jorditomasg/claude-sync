@@ -2,8 +2,8 @@ import { expect, test } from 'claude-code/testing'
 import * as app from '../hooks/app'
 import { detectEnv } from '../hooks/platform'
 import { emptyState, type SyncState } from '../hooks/profile'
-import { ensureRepo } from '../hooks/repo'
-import { fakeHost, unameLinux, type Command } from './fake-host'
+import { checkTools, ensureRepo } from '../hooks/repo'
+import { fail, fakeHost, ok, unameLinux, type Command } from './fake-host'
 import { claudeCommand, ghCommand, gitCommand, newRemote, type Remote } from './fake-git'
 import { C, GH, H, LEAKS, machineA, PEM, SECRETS } from './fixture'
 
@@ -254,4 +254,20 @@ test('a token inside a permission rule never shows in ids, labels or commit mess
   const { summary } = await uploadAll(a.ctx)
   expect(summary.applied.some(id => id.startsWith('permission:allow:'))).toBe(true)
   expect(pushed(remote).includes(GH)).toBe(false)
+})
+
+test('a GITHUB_TOKEN or GH_TOKEN in the environment that overrides the gh login is named, never its value', async () => {
+  const gh = (status: { code: number; stdout?: string; stderr?: string }): Command => argv => {
+    if (argv[0] === 'git' || (argv[0] === 'gh' && argv[1] === '--version')) return ok('2.0\n')
+    if (argv[0] === 'gh' && argv[1] === 'auth') return { code: status.code, stdout: status.stdout ?? '', stderr: status.stderr ?? '' }
+    return fail()
+  }
+  const said = fakeHost({ commands: [gh({ code: 1, stdout: 'github.com\n  X Failed to log in to github.com using token (GITHUB_TOKEN)\n  - The token in GITHUB_TOKEN is invalid.\n' })] })
+  expect(await checkTools(said)).toEqual({ git: true, gh: true, ghAuthed: false, tokenVar: 'GITHUB_TOKEN' })
+  const set = fakeHost({ env: { GH_TOKEN: 'bad-value', GITHUB_TOKEN: 'other' }, commands: [gh({ code: 1, stderr: 'not logged in' })] })
+  const tools = await checkTools(set)
+  expect(tools).toEqual({ git: true, gh: true, ghAuthed: false, tokenVar: 'GH_TOKEN' })
+  expect(JSON.stringify(tools).includes('bad-value')).toBe(false)
+  const plain = fakeHost({ commands: [gh({ code: 1, stderr: 'You are not logged into any GitHub hosts. To log in, run: gh auth login' })] })
+  expect(await checkTools(plain)).toEqual({ git: true, gh: true, ghAuthed: false })
 })

@@ -13,6 +13,7 @@ import * as repo from './repo'
 import type { Finding } from './secrets'
 
 export const PANE = 'config-sync'
+const PANE_ARGS = { id: PANE, title: 'Claude Sync', focus: true, closeOnEscape: true } as const
 export const chipAtom = atom({ plugin: 'config-sync', key: 'chip' } as const, { isReady: false, pending: 0, incoming: false } as ClaudeSyncChip, { shape: 'chip-1' })
 const screenAtom = atom({ plugin: 'config-sync', key: 'screen' } as const, { name: 'menu' } as ClaudeSyncScreen, { shape: 'screen-1' })
 
@@ -48,6 +49,14 @@ let env: Env | undefined
 let state: SyncState | undefined
 let secretValues: Record<string, string> = {}
 let busy = false
+let queue: Promise<unknown> = Promise.resolve()
+let focusTurn = 0
+
+function serial<T> (work: () => Promise<T>): Promise<T> {
+  const next = queue.then(work)
+  queue = next.catch(() => undefined)
+  return next
+}
 
 export async function language ($: EngineInterface): Promise<Strings> {
   if (!lang) {
@@ -72,14 +81,41 @@ async function context ($: EngineInterface): Promise<app.Ctx> {
   }
 }
 
-function show ($: EngineInterface, screen: Screen) {
-  return update($, screenAtom, () => screen as ClaudeSyncScreen)
+async function show ($: EngineInterface, screen: Screen): Promise<void> {
+  const before = (await read($, screenAtom)) as Screen
+  const key = before.name === screen.name ? undefined : primaryKey(screen, await language($))
+  const moving = key ? requestRing($, key) : undefined
+  await update($, screenAtom, () => screen as ClaudeSyncScreen)
+  if (key && moving) void keepRing($, key, moving, ++focusTurn)
 }
 
-export async function refresh ($: EngineInterface, fetch = true): Promise<void> {
-  const ctx = await context($)
-  const chip = await app.status(ctx, fetch).catch(() => ({ isReady: Boolean(ctx.state.repo && ctx.state.profile), profile: ctx.state.profile, pending: 0, incoming: false }))
-  await update($, chipAtom, () => chip)
+async function ownPane ($: EngineInterface) {
+  return (await $.ui.panes().catch(() => undefined))?.find(p => p.id === PANE)
+}
+
+function requestRing ($: EngineInterface, key: string): Promise<string | undefined> {
+  return $.ui.focus({ requestId: PANE, key }).then(r => r.deny, (error: unknown) => String(error))
+}
+
+async function keepRing ($: EngineInterface, key: string, moving: Promise<string | undefined>, turn: number): Promise<void> {
+  const denied = await moving
+  if (!denied || turn !== focusTurn) return
+  const pane = await ownPane($)
+  if (!pane || pane.isFocused) return trace($, `focus ${key}: ${denied}`)
+  await $.ui.open(PANE_ARGS).catch(() => undefined)
+  trace($, `focus ${key}: ${denied}; asked for the keys again: ${(await requestRing($, key)) ?? 'moved'}`)
+}
+
+function trace ($: EngineInterface, text: string): void {
+  try { $.ui.log(`config-sync: ${text}`, { to: 'debug' }) } catch { return undefined }
+}
+
+export function refresh ($: EngineInterface, fetch = true): Promise<void> {
+  return serial(async () => {
+    const ctx = await context($)
+    const chip = await app.status(ctx, fetch).catch(() => ({ isReady: Boolean(ctx.state.repo && ctx.state.profile), profile: ctx.state.profile, pending: 0, incoming: false }))
+    await update($, chipAtom, () => chip)
+  })
 }
 
 async function run ($: EngineInterface, work: () => Promise<Screen>): Promise<void> {
@@ -87,7 +123,7 @@ async function run ($: EngineInterface, work: () => Promise<Screen>): Promise<vo
   busy = true
   await show($, { name: 'busy' })
   try {
-    await show($, await work())
+    await show($, await serial(work))
   } catch (error) {
     const t = await language($)
     await show($, { name: 'error', text: error instanceof app.SecretLeak ? t.leak : String((error as Error).message ?? error) })
@@ -99,9 +135,15 @@ async function run ($: EngineInterface, work: () => Promise<Screen>): Promise<vo
 
 export async function openPane ($: EngineInterface): Promise<void> {
   const ctx = await context($)
-  await show($, ctx.state.repo && ctx.state.profile ? { name: 'menu' } : { name: 'setup' })
-  await $.ui.open({ id: PANE, title: 'Claude Sync', focus: true, closeOnEscape: true })
-  if (!ctx.state.repo || !ctx.state.profile) void run($, async () => setupScreen($))
+  const isReady = Boolean(ctx.state.repo && ctx.state.profile)
+  if (!busy) await update($, screenAtom, () => (isReady ? { name: 'menu' } : { name: 'setup' }) as ClaudeSyncScreen)
+  if (await ownPane($)) await $.ui.close({ id: PANE })
+  const opened = await $.ui.open(PANE_ARGS)
+  if (!(await ownPane($))?.isFocused) trace($, `open: ${opened.isPlaced ? 'placed' : opened.reason}, without the keys`)
+  const key = primaryKey((await read($, screenAtom)) as Screen, await language($))
+  if (key) void keepRing($, key, requestRing($, key), ++focusTurn)
+  if (!isReady) void run($, async () => setupScreen($))
+  else void refresh($)
 }
 
 async function setupScreen ($: EngineInterface, log?: string): Promise<Screen> {
@@ -274,16 +316,15 @@ function treeView ($: EngineInterface, el: El, t: Strings, tree: Tree) {
         const count = cat.rows.filter(r => tree.checked.includes(r.id)).length
         return (
           <Box flexDirection="column">
-            <Box flexDirection="row">
+            <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
               <Button key={`cat:${cat.key}`} plain autoFocus={index === 0 ? true : undefined} onPress={() => { void set({ open: toggle(tree.open, cat.key) }) }}>{isOpen ? '▾ ' : '▸ '}{cat.label} <Text dimColor>({count}/{cat.rows.length})</Text></Button>
-              <Text> </Text>
               <Button key={`all:${cat.key}`} plain dimColor onPress={() => { void set({ checked: cat.rows.filter(r => r.status !== 'secret' && r.status !== 'other-os').reduce((l, r) => toggle(l, r.id, true), tree.checked) }) }}>{t.all}</Button>
-              <Text dimColor> / </Text>
+              <Text dimColor>/</Text>
               <Button key={`none:${cat.key}`} plain dimColor onPress={() => { void set({ checked: cat.rows.reduce((l, r) => toggle(l, r.id, false), tree.checked) }) }}>{t.none}</Button>
             </Box>
             {isOpen
               ? cat.rows.map(row => (
-                <Box flexDirection="row">
+                <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
                   <Button key={`row:${row.id}`} plain onPress={() => {
                     if (row.status === 'secret') void show($, { name: 'secrets', tree, itemId: row.id })
                     else void set({ checked: toggle(tree.checked, row.id) })
@@ -293,7 +334,7 @@ function treeView ($: EngineInterface, el: El, t: Strings, tree: Tree) {
                     {row.inProjectGit ? <Text dimColor> · {t.inProjectGit}</Text> : ''}
                   </Button>
                   {tree.mode === 'import' && row.status !== 'new' && row.status !== 'same'
-                    ? <Button key={`diff:${row.id}`} plain dimColor onPress={() => { void run($, async () => ({ name: 'diff', tree, title: row.label, diff: await app.diffFor(await context($), await prep($, tree.import as ImportFlow), row.id) })) }}>{`  ${t.diff}`}</Button>
+                    ? <Button key={`diff:${row.id}`} plain dimColor onPress={() => { void run($, async () => ({ name: 'diff', tree, title: row.label, diff: await app.diffFor(await context($), await prep($, tree.import as ImportFlow), row.id) })) }}>{t.diff}</Button>
                     : null}
                 </Box>
                 ))
@@ -302,9 +343,8 @@ function treeView ($: EngineInterface, el: El, t: Strings, tree: Tree) {
         )
       })}
       {tree.hidden > 0 ? <Text dimColor>{t.hiddenSame(tree.hidden)}</Text> : null}
-      <Box flexDirection="row">
+      <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
         <Button key="continue" variant="primary" autoFocus={tree.rows.length === 0 ? true : undefined} onPress={() => { void run($, () => continueTree($, tree)) }}>{t.continue}</Button>
-        <Text> </Text>
         <Button key="back" onPress={() => { void show($, { name: 'menu' }) }}>{t.back}</Button>
       </Box>
     </Box>
@@ -326,6 +366,35 @@ function diffView (el: El, t: Strings, diff: ItemDiff) {
   )
 }
 
+export function primaryKey (screen: Screen, t: Strings): string | undefined {
+  switch (screen.name) {
+    case 'menu': return 'upload'
+    case 'busy': return 'busy'
+    case 'error': case 'diff': return 'back'
+    case 'setup': {
+      const tools = screen.tools
+      if (tools?.git && tools.ghAuthed && tools.login) return 'connect'
+      return tools?.gh && !tools.ghAuthed && !tools.tokenVar ? 'signin' : 'check'
+    }
+    case 'profiles':
+      if (screen.purpose !== 'history' && screen.list.length === 0) return 'new'
+      return screen.list[0] !== undefined ? `p:${screen.list[0]}` : 'back'
+    case 'tree': { const first = categories(screen, t)[0]; return first ? `cat:${first.key}` : 'continue' }
+    case 'secrets': {
+      const first = (screen.tree.upload?.findings ?? []).find(f => f.itemId === screen.itemId && !screen.tree.upload?.exceptions.includes(f.hash))
+      return first ? `ok:${first.hash}` : 'back'
+    }
+    case 'ask': return 'no'
+    case 'upload-first': return 'up'
+    case 'conflict': return 'remote'
+    case 'values': return screen.asked[0] ? `v:${screen.asked[0].name}` : 'continue'
+    case 'review': return 'apply'
+    case 'summary': return 'menu'
+    case 'mix-name': return 'mix'
+    case 'history': return screen.versions[0] ? `v:${screen.versions[0].commit}` : 'back'
+  }
+}
+
 export async function draw ($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0]) {
   const t = await language($)
   const table = $.ui.resolve(e)
@@ -338,7 +407,7 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
   const backButton = <Button key="back" onPress={menu}>{t.back}</Button>
 
   switch (screen.name) {
-    case 'busy': return <Text dimColor>{t.working}</Text>
+    case 'busy': return <Button key="busy" plain dimColor autoFocus onPress={() => undefined}>{t.working}</Button>
     case 'error': return <Box flexDirection="column"><Text bold color="error">{t.errorTitle}</Text><Text>{screen.text}</Text>{backButton}</Box>
     case 'setup': {
       const tools = screen.tools
@@ -348,13 +417,13 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
           <Text dimColor>{t.setupIntro}</Text>
           {tools ? <Text>{tools.git ? t.toolOk('git') : t.toolMissing('git')}</Text> : null}
           {tools ? <Text>{tools.gh ? t.toolOk('gh') : t.toolMissing('gh')}</Text> : null}
-          {tools?.gh ? <Text>{tools.ghAuthed ? t.loggedIn(tools.login ?? '') : t.needLogin}</Text> : null}
+          {tools?.gh ? <Text>{tools.ghAuthed ? t.loggedIn(tools.login ?? '') : tools.tokenVar ? t.tokenOverride(tools.tokenVar) : t.needLogin}</Text> : null}
+          {tools?.tokenVar ? <Text dimColor>{t.tokenFix(tools.tokenVar)}</Text> : null}
           {screen.log ? <Text dimColor>{screen.log}</Text> : null}
-          {tools?.gh && !tools.ghAuthed ? <Text dimColor>{t.signInManual}</Text> : null}
-          <Box flexDirection="row">
+          {tools?.gh && !tools.ghAuthed && !tools.tokenVar ? <Text dimColor>{t.signInManual}</Text> : null}
+          <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
             {tools?.git && tools.ghAuthed && tools.login ? <Button key="connect" variant="primary" autoFocus onPress={() => { void run($, () => connect($, tools.login ?? '')) }}>{t.connect(`${tools.login}/${repo.REPO_NAME}`)}</Button> : null}
-            {tools?.gh && !tools.ghAuthed ? <Button key="signin" variant="primary" autoFocus onPress={() => { void signIn($) }}>{t.signIn}</Button> : null}
-            <Text> </Text>
+            {tools?.gh && !tools.ghAuthed && !tools.tokenVar ? <Button key="signin" variant="primary" autoFocus onPress={() => { void signIn($) }}>{t.signIn}</Button> : null}
             <Button key="check" onPress={() => { void run($, () => setupScreen($)) }}>{t.checkAgain}</Button>
           </Box>
         </Box>
@@ -396,8 +465,8 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
           <Text bold color="warning">{t.secretsTitle}: {labelOf(screen.tree, screen.itemId)}</Text>
           <Text dimColor>{t.secretsIntro}</Text>
           {findings.map(f => (
-            <Box flexDirection="row">
-              <Text>{t.finding(f.file, f.line, f.preview)}  </Text>
+            <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
+              <Text>{t.finding(f.file, f.line, f.preview)}</Text>
               <Button key={`ok:${f.hash}`} onPress={() => {
                 const upload = screen.tree.upload as UploadFlow
                 const exceptions = [...upload.exceptions, f.hash]
@@ -431,13 +500,12 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
         <Box flexDirection="column">
           <Text bold>{screen.kind === 'remove' ? t.removeTitle : t.deleteTitle}</Text>
           <Text>{screen.kind === 'remove' ? t.removeText(head.label) : t.deleteText(head.label)}</Text>
-          <Box flexDirection="row">
+          <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
             <Button key="no" autoFocus onPress={() => answer(no ?? 'keep', false)}>{screen.kind === 'remove' ? t.keep : t.keepHere}</Button>
-            <Text> </Text>
             <Button key="yes" onPress={() => answer(yes ?? 'keep', false)}>{screen.kind === 'remove' ? t.remove : t.delete}</Button>
           </Box>
           {rest.length > 0
-            ? <Box flexDirection="row"><Text dimColor>{t.applyAll}: </Text><Button key="no-all" plain onPress={() => answer(no ?? 'keep', true)}>{screen.kind === 'remove' ? t.keep : t.keepHere}</Button><Text dimColor> / </Text><Button key="yes-all" plain onPress={() => answer(yes ?? 'keep', true)}>{screen.kind === 'remove' ? t.remove : t.delete}</Button></Box>
+            ? <Box flexDirection="row" flexWrap="wrap" columnGap={1}><Text dimColor>{t.applyAll}:</Text><Button key="no-all" plain onPress={() => answer(no ?? 'keep', true)}>{screen.kind === 'remove' ? t.keep : t.keepHere}</Button><Text dimColor>/</Text><Button key="yes-all" plain onPress={() => answer(yes ?? 'keep', true)}>{screen.kind === 'remove' ? t.remove : t.delete}</Button></Box>
             : null}
         </Box>
       )
@@ -447,9 +515,8 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
         <Box flexDirection="column">
           <Text bold>{t.uploadFirstTitle}</Text>
           <Text>{t.uploadFirstText(screen.pending)}</Text>
-          <Box flexDirection="row">
+          <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
             <Button key="up" variant="primary" autoFocus onPress={() => { void run($, () => uploadTree($, screen.profile)) }}>{t.uploadFirst}</Button>
-            <Text> </Text>
             <Button key="skip" onPress={() => { void run($, () => importTree($, { profile: screen.profile })) }}>{t.skipUpload}</Button>
           </Box>
         </Box>
@@ -466,9 +533,8 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
           <Text bold color="warning">{t.conflictTitle(head.label)}</Text>
           <Text dimColor>{t.conflictText}</Text>
           {diffView(el, t, screen.diff)}
-          <Box flexDirection="row">
+          <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
             <Button key="remote" autoFocus onPress={() => pick('remote')}>{t.useRemote}</Button>
-            <Text> </Text>
             <Button key="local" onPress={() => pick('local')}>{t.useLocal}</Button>
           </Box>
         </Box>
@@ -496,9 +562,8 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
           {screen.lines.map(line => (line.kind === 'replace' && line.diff
             ? <Box flexDirection="column"><Text bold>{line.label}</Text>{diffView(el, t, line.diff)}</Box>
             : <Text>{line.kind === 'new' ? t.reviewNew(line.label) : t.reviewDelete(line.label)}</Text>))}
-          <Box flexDirection="row">
+          <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
             <Button key="apply" variant="primary" autoFocus onPress={() => { void run($, () => apply($, screen.tree)) }}>{t.apply}</Button>
-            <Text> </Text>
             <Button key="back" onPress={() => { void show($, screen.tree) }}>{t.back}</Button>
           </Box>
         </Box>
@@ -508,9 +573,8 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
         <Box flexDirection="column">
           <Text bold>{t.summaryTitle}</Text>
           {screen.lines.map(line => <Text>{line}</Text>)}
-          <Box flexDirection="row">
+          <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
             <Button key="menu" variant="primary" autoFocus onPress={menu}>{t.back}</Button>
-            {screen.canUndo ? <Text> </Text> : null}
             {screen.canUndo ? <Button key="undo" onPress={() => { void run($, async () => ({ name: 'summary', lines: [(await app.undo(await context($))) ? t.undone : t.nothingToUndo], canUndo: false })) }}>{t.menuUndo}</Button> : null}
           </Box>
         </Box>
@@ -543,7 +607,7 @@ export async function draw ($: EngineInterface, e: Parameters<EngineInterface['u
       const profile = ctx.state.profile ?? ''
       const undoable = await app.hasBackup(ctx)
       const entry = (key: string, label: string, work: () => Promise<Screen>, hotkey: string) =>
-        <Button key={key} plain hotkey={hotkey} onPress={() => { void run($, work) }}>{label}</Button>
+        <Button key={key} plain hotkey={hotkey} autoFocus={key === 'upload' ? true : undefined} onPress={() => { void run($, work) }}>{label}</Button>
       return (
         <Box flexDirection="column">
           <Text bold>{t.title} · {t.profile(profile)}</Text>
