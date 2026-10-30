@@ -1,0 +1,13 @@
+{
+  "name": "claude-sync",
+  "owner": { "name": "Jordi Tomás", "url": "https://github.com/Jorditomasg" },
+  "description": "claude-sync: keep your Claude Code setup in your own private GitHub repo and bring it to any machine.",
+  "plugins": [
+    {
+      "name": "config-sync",
+      "source": "./",
+      "description": "Save your Claude Code setup to your own private GitHub repo and bring it back on any machine, piece by piece, with profiles and versions. Secrets never leave your machine.",
+      "version": "0.1.0"
+    }
+  ]
+}

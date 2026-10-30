@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="t d">
+  <title id="t">How your setup travels</title>
+  <desc id="d">Machine A uploads chosen items to your private GitHub repository claude-sync-config; machine B shows the differences and applies what you choose. Secrets are replaced by markers and never leave the machine.</desc>
+  <style>
+    .ink { fill: #24292f } .soft { fill: #57606a } .box { fill: none; stroke: #57606a }
+    @media (prefers-color-scheme: dark) { .ink { fill: #e6edf3 } .soft { fill: #9da7b3 } .box { stroke: #9da7b3 } }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace }
+    .sans { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#D77757"/>
+    </marker>
+  </defs>
+
+  <g transform="translate(40 90)">
+    <rect width="300" height="260" rx="18" class="box" stroke-width="2"/>
+    <text x="24" y="44" class="sans ink" font-size="24" font-weight="700">Machine A</text>
+    <text x="24" y="72" class="sans soft" font-size="16">Windows · WSL · macOS · Linux</text>
+    <text x="24" y="116" class="mono ink" font-size="16">[x] CLAUDE.md</text>
+    <text x="24" y="142" class="mono ink" font-size="16">[x] hooks · skills</text>
+    <text x="24" y="168" class="mono ink" font-size="16">[x] plugins · MCP</text>
+    <text x="24" y="194" class="mono soft" font-size="16">[ ] memory ⚠ secret</text>
+    <rect x="24" y="214" width="252" height="30" rx="15" fill="#D77757"/>
+    <text x="150" y="235" class="sans" font-size="15" fill="#ffffff" text-anchor="middle">secrets stay here</text>
+  </g>
+
+  <g transform="translate(450 60)">
+    <rect width="300" height="320" rx="18" fill="#D77757"/>
+    <text x="150" y="48" class="sans" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">Your private repo</text>
+    <text x="150" y="76" class="mono" font-size="16" fill="#ffffff" fill-opacity="0.9" text-anchor="middle">claude-sync-config</text>
+    <rect x="24" y="100" width="252" height="196" rx="10" fill="#ffffff" fill-opacity="0.16"/>
+    <text x="44" y="132" class="mono" font-size="16" fill="#ffffff">profiles/</text>
+    <text x="64" y="160" class="mono" font-size="16" fill="#ffffff">casa/</text>
+    <text x="64" y="188" class="mono" font-size="16" fill="#ffffff">trabajo/</text>
+    <text x="84" y="216" class="mono" font-size="14" fill="#ffffff" fill-opacity="0.85">manifest.json</text>
+    <text x="44" y="250" class="mono" font-size="14" fill="#ffffff" fill-opacity="0.85">${secret:…} markers</text>
+    <text x="44" y="276" class="mono" font-size="14" fill="#ffffff" fill-opacity="0.85">git history = versions</text>
+  </g>
+
+  <g transform="translate(860 90)">
+    <rect width="300" height="260" rx="18" class="box" stroke-width="2"/>
+    <text x="24" y="44" class="sans ink" font-size="24" font-weight="700">Machine B</text>
+    <text x="24" y="72" class="sans soft" font-size="16">⇅ casa ●↓ in the footer</text>
+    <text x="24" y="116" class="mono" font-size="16" fill="#D77757">- old line</text>
+    <text x="24" y="142" class="mono ink" font-size="16">+ new line</text>
+    <text x="24" y="168" class="mono soft" font-size="16">copy kept · undo</text>
+    <text x="24" y="194" class="mono soft" font-size="16">plugins installed</text>
+    <rect x="24" y="214" width="252" height="30" rx="15" fill="#D77757"/>
+    <text x="150" y="235" class="sans" font-size="15" fill="#ffffff" text-anchor="middle">you choose, nothing auto-applies</text>
+  </g>
+
+  <path d="M350 190 C 390 190, 400 190, 440 190" stroke="#D77757" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <text x="395" y="176" class="sans ink" font-size="17" text-anchor="middle">Upload</text>
+  <path d="M760 250 C 800 250, 810 250, 850 250" stroke="#D77757" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <text x="805" y="236" class="sans ink" font-size="17" text-anchor="middle">Bring</text>
+
+  <text x="600" y="424" class="sans soft" font-size="18" text-anchor="middle">Item by item · profiles and mixed profiles · diff before overwriting · deletions are always asked</text>
+</svg>

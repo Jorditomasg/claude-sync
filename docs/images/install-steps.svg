@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="t d">
+  <title id="t">Install in four steps</title>
+  <desc id="d">1 create a GitHub account, 2 install git and gh, 3 install the plugin, 4 run /sync.</desc>
+  <style>
+    .ink { fill: #24292f } .soft { fill: #57606a }
+    @media (prefers-color-scheme: dark) { .ink { fill: #e6edf3 } .soft { fill: #9da7b3 } }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace }
+    .sans { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif }
+  </style>
+  <path d="M150 96 H1050" stroke="#D77757" stroke-width="4" stroke-dasharray="2 12" stroke-linecap="round"/>
+  <g class="sans" text-anchor="middle">
+    <g transform="translate(150 96)">
+      <circle r="44" fill="#D77757"/><text y="14" font-size="40" font-weight="700" fill="#ffffff">1</text>
+      <text y="96" font-size="22" font-weight="700" class="ink">GitHub account</text>
+      <text y="126" font-size="17" class="soft">free, at github.com</text>
+    </g>
+    <g transform="translate(450 96)">
+      <circle r="44" fill="#D77757"/><text y="14" font-size="40" font-weight="700" fill="#ffffff">2</text>
+      <text y="96" font-size="22" font-weight="700" class="ink">git + gh</text>
+      <text y="126" font-size="17" class="soft">one command per system</text>
+    </g>
+    <g transform="translate(750 96)">
+      <circle r="44" fill="#D77757"/><text y="14" font-size="40" font-weight="700" fill="#ffffff">3</text>
+      <text y="96" font-size="22" font-weight="700" class="ink">Install the plugin</text>
+      <text y="126" font-size="16" class="mono soft">/plugin install …</text>
+    </g>
+    <g transform="translate(1050 96)">
+      <circle r="44" fill="#D77757"/><text y="14" font-size="40" font-weight="700" fill="#ffffff">4</text>
+      <text y="96" font-size="22" font-weight="700" class="ink">Run /sync</text>
+      <text y="126" font-size="17" class="soft">sign in, pick, upload</text>
+    </g>
+  </g>
+</svg>
