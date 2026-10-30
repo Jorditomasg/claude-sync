@@ -1,0 +1,11 @@
+{
+  "name": "config-sync",
+  "version": "0.1.0",
+  "description": "Save your Claude Code setup (CLAUDE.md, hooks, skills, agents, plugins, MCP, memory) to your own private GitHub repo and bring it back on any machine, piece by piece, with profiles and versions. Secrets never leave your machine.",
+  "author": { "name": "Jordi Tomás", "url": "https://github.com/Jorditomasg" },
+  "homepage": "https://github.com/Jorditomasg/claude-sync",
+  "repository": "https://github.com/Jorditomasg/claude-sync",
+  "license": "MIT",
+  "keywords": ["sync", "settings", "dotfiles", "profiles", "backup", "mod"],
+  "types": "./types/index.d.ts"
+}
