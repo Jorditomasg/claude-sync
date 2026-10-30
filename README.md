@@ -13,14 +13,14 @@
   - values under names like `TOKEN`, `KEY`, `SECRET`, `PASSWORD` or `Authorization` (in `env`, MCP servers and plugin settings) are replaced by a marker such as `${secret:mcp:github.env.GITHUB_TOKEN}`;
   - known token formats (`ghp_…`, `github_pat_…`, `sk-…`, `xox…`, private keys…) are looked for in **every** file. Inside free text (memory, skills, `CLAUDE.md`) the item is **blocked**, never edited behind your back, and you are shown where. If it is not a secret you can say so for that exact text only.
   - On the other machine you are asked for each missing value, and it stays there.
-- **Never synced:** credentials, history, sessions, transcripts, caches, statistics, backups, plugin caches and every internal key of `~/.claude.json` (only `mcpServers` and each project's configuration travel). `plugins/synced/` is not synced either: its entries cannot be tied to a plugin.
+- **Never synced:** credentials, history, sessions, transcripts, caches, statistics, backups, plugin caches and every internal key of `~/.claude.json` (only `mcpServers` and each project's configuration travel). Neither are the skills and plugin data Claude Code syncs from your account (`skills/synced/`, `plugins/synced/`).
 - **Nothing is applied on its own.** The footer tells you when there is something new; you decide, after seeing the difference. Nothing is deleted without asking.
 
 ## 2. Install git and gh
 
-You need a **GitHub account** (free): sign up at [github.com/signup](https://github.com/signup).
+<p align="center"><img src="docs/images/install-steps.svg" alt="Four steps: GitHub account, git and gh, install the plugin, run /sync" width="100%"></p>
 
-![GitHub sign-up page](docs/images/screenshot-github-signup.png)
+You need a **GitHub account** (free): sign up at [github.com/signup](https://github.com/signup).
 
 Then install `git` and the GitHub CLI `gh` once per machine. Open a terminal and run the block for your system:
 
@@ -59,8 +59,6 @@ sudo pacman -S git github-cli
 
 Close and reopen Claude Code afterwards so it sees them.
 
-<p align="center"><img src="docs/images/install-steps.svg" alt="Four steps: GitHub account, git and gh, install the plugin, run /sync" width="100%"></p>
-
 ## 3. Install the plugin
 
 At the Claude Code prompt:
@@ -68,12 +66,6 @@ At the Claude Code prompt:
 ```
 /plugin marketplace add Jorditomasg/claude-sync
 /plugin install config-sync@claude-sync
-```
-
-Or in one step (Claude Code 2.1.275 or later):
-
-```
-/plugin install config-sync --marketplace Jorditomasg/claude-sync
 ```
 
 Answer `y` if asked to add the marketplace and pick the **user** scope. A `⇅ sync` chip appears at the bottom right of Claude Code.
@@ -121,6 +113,7 @@ Project items (`.claude/` of a repo, `CLAUDE.md`, `.mcp.json`, project memory) a
 
 - **I do not see the chip, or clicking does nothing.** Clicks need Claude Code's fullscreen terminal. `/sync` opens the same panel everywhere.
 - **`git` or `gh` is not installed** even after installing: restart Claude Code so it picks up the new `PATH`.
+- **It says you are not signed in, but `gh` is.** A `GITHUB_TOKEN` or `GH_TOKEN` in Claude's `env` (or your shell) overrides `gh auth login`. The panel tells you which one; remove it or set a valid token, restart Claude Code and press **Check again**.
 - **Sign-in does not finish.** Type `! gh auth login` at the prompt, follow it, then press **Check again**.
 - **An item is `⚠ secret`.** Remove the token from that file (memory, skill…) or mark the finding **Not a secret**. It is remembered only for that exact text in that item; if the text changes, it is checked again.
 - **A plugin was skipped.** Its marketplace may have moved or dropped it. The rest is applied; the summary says why. When the recorded version no longer exists the current one is installed with a warning.
