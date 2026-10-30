@@ -202,6 +202,8 @@ Comprobar `git` y `gh` → `gh auth login` si hace falta → crear `claude-sync-
 
 Capturas reales de la terminal, en `docs/images/`.
 
+Imágenes propias del README (cabecera, esquema de cómo viaja la config entre equipos, pasos de instalación) con el **naranja de acento de Claude Code** (`#D77757`, el `rgb(215,119,87)` del tema por defecto de la CLI) como color principal. En SVG para que se vean nítidas, y legibles tanto con el tema claro como con el oscuro de GitHub.
+
 ## 11. Decidido
 
 | Decisión | Quién |
