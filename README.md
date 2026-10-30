@@ -20,7 +20,7 @@
 
 You need a **GitHub account** (free): sign up at [github.com/signup](https://github.com/signup).
 
-![Screenshot pending: GitHub sign-up page](docs/images/screenshot-github-signup.png)
+![GitHub sign-up page](docs/images/screenshot-github-signup.png)
 
 Then install `git` and the GitHub CLI `gh` once per machine. Open a terminal and run the block for your system:
 

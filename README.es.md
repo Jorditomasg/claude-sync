@@ -20,7 +20,7 @@
 
 Necesitas una **cuenta de GitHub** (gratis): créala en [github.com/signup](https://github.com/signup).
 
-![Captura pendiente: página de registro de GitHub](docs/images/screenshot-github-signup.png)
+![Página de registro de GitHub](docs/images/screenshot-github-signup.png)
 
 Después instala `git` y la herramienta de GitHub `gh` una vez en cada equipo. Abre una terminal y ejecuta el bloque de tu sistema:
 
